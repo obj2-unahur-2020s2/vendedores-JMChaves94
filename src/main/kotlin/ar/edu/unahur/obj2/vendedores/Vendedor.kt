@@ -7,11 +7,15 @@ abstract class Vendedor {
   // Además, a una MutableList se le pueden agregar elementos
   val certificaciones = mutableListOf<Certificacion>()
 
+  // Definimos el método abstracto.
+  // Como no vamos a implementarlo acá, es necesario explicitar qué devuelve.
+  abstract fun puedeTrabajarEn(ciudad: Ciudad): Boolean
+
   // En las funciones declaradas con = no es necesario explicitar el tipo
   fun esVersatil() =
-    certificaciones.size >= 3
-      && this.certificacionesDeProducto() >= 1
-      && this.otrasCertificaciones() >= 1
+          certificaciones.size >= 3
+                  && this.certificacionesDeProducto() >= 1
+                  && this.otrasCertificaciones() >= 1
 
   // Si el tipo no está declarado y la función no devuelve nada, se asume Unit (es decir, vacío)
   fun agregarCertificacion(certificacion: Certificacion) {
@@ -22,26 +26,41 @@ abstract class Vendedor {
 
   fun certificacionesDeProducto() = certificaciones.count { it.esDeProducto }
   fun otrasCertificaciones() = certificaciones.count { !it.esDeProducto }
-
   fun puntajeCertificaciones() = certificaciones.sumBy { c -> c.puntaje }
+  abstract fun esInfluyente(): Boolean
+  fun esGenerico() = certificaciones.any { c -> ! c.esDeProducto }
+
 }
 
 // En los parámetros, es obligatorio poner el tipo
 class VendedorFijo(val ciudadOrigen: Ciudad) : Vendedor() {
-  fun puedeTrabajarEn(ciudad: Ciudad): Boolean {
+  override fun puedeTrabajarEn(ciudad: Ciudad): Boolean {
     return ciudad == ciudadOrigen
   }
+  override fun esInfluyente() = false
 }
 
 // A este tipo de List no se le pueden agregar elementos una vez definida
 class Viajante(val provinciasHabilitadas: List<Provincia>) : Vendedor() {
-  fun puedeTrabajarEn(ciudad: Ciudad): Boolean {
+  override fun puedeTrabajarEn(ciudad: Ciudad): Boolean {
     return provinciasHabilitadas.contains(ciudad.provincia)
   }
+  override fun esInfluyente() = this.poblacionDeHabilitadas() > 10000000
+
+  fun poblacionDeHabilitadas() = provinciasHabilitadas.sumBy { it.poblacion }
+
 }
 
 class ComercioCorresponsal(val ciudades: List<Ciudad>) : Vendedor() {
-  fun puedeTrabajarEn(ciudad: Ciudad): Boolean {
+  override fun puedeTrabajarEn(ciudad: Ciudad): Boolean {
     return ciudades.contains(ciudad)
+  }
+
+  fun cantProvincias() = ciudades.map{ it.provincia}.toSet().size
+  fun cantCiudades() = ciudades.toSet().size
+
+  override fun esInfluyente(): Boolean
+  {
+    return cantCiudades() >= 3 || cantProvincias() >= 5
   }
 }
